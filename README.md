@@ -1,5 +1,7 @@
 # Video
-Python code to stream, send, and instrument multiple cameras on a Raspberry Pi. Here's a description of the python files:
+Python code to stream, send, and instrument multiple cameras on a Raspberry Pi.
+
+#### Python Files:
 
 PyCamera.py: Basic test of single camera stream in window.
 
