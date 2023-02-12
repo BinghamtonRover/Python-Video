@@ -1,18 +1,23 @@
 import cv2
 import threading
 import subprocess
-from lib.network import ProtoClient
+import socket
+#from lib.network import ProtoClient
 from lib.network import ProtoServer
+from lib.network import VideoClient
 from lib.network.generated.Protobuf.video_pb2 import *
 
 serials = {}
 FILTER = "ID_SERIAL="
+serverAddressPort("127.0.0.1", 8001)
 client = ProtoClient()
+server = ProtoServer()
+vidClient = VideoClient()
 
 def cam_status(camID, enabled):
     status = CameraStatus(id=camID, is_enabled=enabled)
     print(status)
-    client.send_message("CameraStatus", status, "127.0.0.1", port=8001)
+    client.send_message("CameraStatus", status, "127.0.0.1", port=8009)
     
 class camThread(threading.Thread):
     def __init__(self, previewName, camID):
@@ -36,12 +41,13 @@ def camPreview(previewName, camID):
         rval = False
 
     while rval:
-        cv2.imshow(previewName, frame)
+        #cv2.imshow(previewName, frame)
         rval, frame = cam.read()
-        key = cv2.waitKey(20)
-        if key == 27:  # exit on ESC
-            break
-    cv2.destroyWindow(previewName)
+        vidClient.send_frame(camID, frame, "127.0.0.1", 8009)
+        #key = cv2.waitKey(20)
+        #if key == 27:  # exit on ESC
+         #   break
+    #cv2.destroyWindow(previewName)
     cam_status(camID, False)
 
 def get_cam_serial(cam_id):
@@ -53,19 +59,20 @@ def get_cam_serial(cam_id):
     return response.replace('\n', '')
 
 
-for cam_id in range(0, 10, 2):
+for cam_id in range(0, 20, 2):
     serial = get_cam_serial(cam_id)
     if len(serial) > 6:
         serials[cam_id] = serial
 
-#for key in serials:
- #   status = CameraStatus(id=key, is_enabled=False)
-  #  print(status)
-    #client.send_message("CameraStatus", status, "127.0.0.1", port=8001)
+for key in serials:
+    cam_status(key,False)
 
 print('Cam ID:', serials.keys())
 print('Cam Names: ', serials.values())
 
+#server.start(8002)
+#while:
+#    message = server.on_data(
 # Create two threads as follows
 thread1 = camThread("Camera 1", list(serials.keys())[0])
 thread2 = camThread("Camera 2", list(serials.keys())[1])
