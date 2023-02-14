@@ -8,16 +8,17 @@ import cv2
 import threading
 import subprocess
 import socket
-from lib.network import ProtoClient
-from lib.network import ProtoServer
-from lib.network import VideoClient
+
+from lib.network import ProtoClient, VideoClient
 from lib.network.generated.Protobuf.video_pb2 import *
+
+from lib.server import VideoServer
 
 serials = {}
 FILTER = "ID_SERIAL="
-# serverAddressPort("127.0.0.1", 8001)
+camEnabled = [0,0,0,0,0,0,0]
 client = ProtoClient()
-server = ProtoServer(port=8001)
+server = VideoServer(port=8001)
 vidClient = VideoClient()
 
 def cam_status(camID, enabled):
@@ -77,11 +78,11 @@ for key in serials:
 print('Cam ID:', serials.keys())
 print('Cam Names: ', serials.values())
 
-#server.start(8002)
+server.start(8004)
 #while:
 #    message = server.on_data(
 # Create two threads as follows
-thread1 = camThread("Camera 1", list(serials.keys())[0])
-thread2 = camThread("Camera 2", list(serials.keys())[1])
-thread1.start()
-thread2.start()
+# thread1 = camThread("Camera 1", list(serials.keys())[0])
+# thread2 = camThread("Camera 2", list(serials.keys())[1])
+# thread1.start()
+# thread2.start()
