@@ -3,16 +3,19 @@ import threading
 import subprocess
 import socket
 #from lib.network import ProtoClient
-from lib.network import ProtoServer
+#from lib.network import ProtoServer
 from lib.network import VideoClient
+from lib.network import VideoServer
 from lib.network.generated.Protobuf.video_pb2 import *
 
 serials = {}
 FILTER = "ID_SERIAL="
+camEnabled = [0,0,0,0,0,0,0]
 serverAddressPort("127.0.0.1", 8001)
-client = ProtoClient()
-server = ProtoServer()
-vidClient = VideoClient()
+#client = ProtoClient()
+#server = ProtoServer()
+server = VideoServer()
+client = VideoClient()
 
 def cam_status(camID, enabled):
     status = CameraStatus(id=camID, is_enabled=enabled)
@@ -70,11 +73,11 @@ for key in serials:
 print('Cam ID:', serials.keys())
 print('Cam Names: ', serials.values())
 
-#server.start(8002)
+server.start(8002)
 #while:
 #    message = server.on_data(
 # Create two threads as follows
-thread1 = camThread("Camera 1", list(serials.keys())[0])
-thread2 = camThread("Camera 2", list(serials.keys())[1])
-thread1.start()
-thread2.start()
+#thread1 = camThread("Camera 1", list(serials.keys())[0])
+#thread2 = camThread("Camera 2", list(serials.keys())[1])
+#thread1.start()
+#thread2.start()
