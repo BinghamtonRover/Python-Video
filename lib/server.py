@@ -5,7 +5,6 @@ class VideoServer(ProtoServer):
 	def on_message(self, wrapper, source): 
 		if wrapper.name == "AdjustCamera":
 			command = AdjustCamera.FromString(wrapper.data)
-
 		if (camEnabled[AdjustCamera.id] == 0) && (AdjustCamera.isEnabled == True)
 			thread = camThread("Camera", list(serials.keys())[AdjustCamera.id])
 			thread.start()
