@@ -1,3 +1,6 @@
 [submodule "lib/network"]
 	path = lib/network
 	url = https://github.com/BinghamtonRover/Onboard-Network-Py.git
+[submodule "Networking"]
+	path = Networking
+	url = https://github.com/BinghamtonRover/Networking
