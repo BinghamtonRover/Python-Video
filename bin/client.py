@@ -1,5 +1,5 @@
-from lib.network import ProtoClient
-from lib.network.generated.Protobuf.video_pb2 import *
+from networking import ProtoClient
+from netwokring.generated.Protobuf.video_pb2 import *
 
 client = ProtoClient()
 status = CameraStatus(id=3, is_enabled=True)
