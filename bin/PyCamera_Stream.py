@@ -2,11 +2,11 @@ import cv2
 import threading
 import subprocess
 import socket
-#from lib.network import ProtoClient
-#from lib.network import ProtoServer
-from lib.network import VideoClient
-from lib.network import VideoServer
-from lib.network.generated.Protobuf.video_pb2 import *
+#from networking import ProtoClient
+#from networking import ProtoServer
+from networking import VideoClient
+from networking import VideoServer
+from lnetworking.generated.Protobuf.video_pb2 import *
 
 serials = {}
 FILTER = "ID_SERIAL="
