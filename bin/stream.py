@@ -9,8 +9,8 @@ import threading
 import subprocess
 import socket
 
-from lib.network import ProtoClient, VideoClient
-from lib.network.generated.Protobuf.video_pb2 import *
+from Networking import ProtoClient, VideoClient
+from Netwokring.generated.Protobuf.video_pb2 import *
 
 from lib.server import VideoServer
 
