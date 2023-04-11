@@ -6,7 +6,7 @@ import socket
 #from networking import ProtoServer
 from Networking import VideoClient
 from Networking import VideoServer
-from lnetworking.generated.Protobuf.video_pb2 import *
+from Networking.generated.Protobuf.video_pb2 import *
 
 serials = {}
 FILTER = "ID_SERIAL="
