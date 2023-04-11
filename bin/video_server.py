@@ -1,7 +1,7 @@
 from .udp_server import UdpServer
 from .proto_server import ProtoServer
 
-from networking.generated.Protobuf.wrapper_pb2 import WrappedMessage
+from Networking.generated.Protobuf.wrapper_pb2 import WrappedMessage
 
 class VideoServer(ProtoServer):
 	#def on_message(self, data, source): 
