@@ -4,8 +4,8 @@ import subprocess
 import socket
 #from networking import ProtoClient
 #from networking import ProtoServer
-from networking import VideoClient
-from networking import VideoServer
+from Networking import VideoClient
+from Networking import VideoServer
 from lnetworking.generated.Protobuf.video_pb2 import *
 
 serials = {}
