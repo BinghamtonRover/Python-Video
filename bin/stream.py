@@ -3,8 +3,8 @@ import threading
 import subprocess
 import socket
 
-from Networking import ProtoSocket, VideoClient, Device
-from Networking.src.generated.Protobuf.video_pb2 import *
+from network import ProtoSocket, VideoClient, Device
+from network.src.generated.Protobuf.video_pb2 import *
 
 from lib.server import VideoServer
 

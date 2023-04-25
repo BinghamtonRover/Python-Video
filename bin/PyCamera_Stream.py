@@ -2,8 +2,8 @@ import cv2
 import threading
 import subprocess
 import socket
-from Networking import VideoClient, ProtoSocket, Device
-from Networking.src.generated.Protobuf.video_pb2 import *
+from network import VideoClient, ProtoSocket, Device
+from network.src.generated.Protobuf.video_pb2 import *
 
 serials = {}
 FILTER = "ID_SERIAL="

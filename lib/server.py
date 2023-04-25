@@ -1,5 +1,5 @@
-from Networking import ProtoSocket
-from Networking.src.generated.Protobuf.wrapper_pb2 import WrappedMessage
+from network import ProtoSocket
+from network.src.generated.Protobuf.wrapper_pb2 import WrappedMessage
 
 class VideoServer(ProtoSocket):
 	def on_message(self, wrapper, source): 
