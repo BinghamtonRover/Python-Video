@@ -1,30 +1,22 @@
-import platform
-# TODO: Make a simple test for Windows
-if (platform.system() != "Linux"):
-	print("Sorry, this script only works on Linux")
-	quit()
-
 import cv2
 import threading
 import subprocess
 import socket
 
-from lib.network import ProtoClient, VideoClient
-from lib.network.generated.Protobuf.video_pb2 import *
+from network import ProtoSocket, VideoClient, Device
+from network.src.generated.Protobuf.video_pb2 import *
 
 from lib.server import VideoServer
 
 serials = {}
 FILTER = "ID_SERIAL="
 camEnabled = [0,0,0,0,0,0,0]
-client = ProtoClient()
-server = VideoServer(port=8001)
-vidClient = VideoClient()
+video_socket = VideoClient(port=8000, device=Device.VIDEO, buffer=65_527)
+data_socket = VideoServer(port=8001, device=Device.VIDEO)
 
 def cam_status(camID, enabled):
 	status = CameraStatus(id=camID, is_enabled=enabled)
-	print(status)
-	client.send_message("CameraStatus", status, "127.0.0.1", port=8009)
+	data_socket.send_message(status)
 	
 class camThread(threading.Thread):
 	def __init__(self, previewName, camID):
@@ -50,7 +42,7 @@ def camPreview(previewName, camID):
 	while rval:
 		#cv2.imshow(previewName, frame)
 		rval, frame = cam.read()
-		vidClient.send_frame(camID, frame, "127.0.0.1", 8009)
+		video_socket.send_frame(camID, frame)
 		#key = cv2.waitKey(20)
 		#if key == 27:  # exit on ESC
 		 #   break
@@ -66,19 +58,25 @@ def get_cam_serial(cam_id):
 	response = output.decode('utf-8')
 	return response.replace('\n', '')
 
+if __name__ == '__main__':
+	import platform
+	# TODO: Make a simple test for Windows
+	if (platform.system() != "Linux"):
+		print("Sorry, this script only works on Linux")
+		quit()
 
-for cam_id in range(0, 20, 2):
-	serial = get_cam_serial(cam_id)
-	if len(serial) > 6:
-		serials[cam_id] = serial
+	for cam_id in range(0, 20, 2):
+		serial = get_cam_serial(cam_id)
+		if len(serial) > 6:
+			serials[cam_id] = serial
 
-for key in serials:
-	cam_status(key,False)
+	for key in serials:
+		cam_status(key,False)
 
-print('Cam ID:', serials.keys())
-print('Cam Names: ', serials.values())
+	print('Cam ID:', serials.keys())
+	print('Cam Names: ', serials.values())
 
-server.start(8004)
+	server.listen()
 #while:
 #    message = server.on_data(
 # Create two threads as follows

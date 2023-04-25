@@ -5,6 +5,11 @@ import subprocess
 serials = {}
 FILTER = "ID_SERIAL="
 
+# TODO: Make a simple test for Windows
+import platform
+if (platform.system() != "Linux"):
+    print("Sorry, this script only works on Linux")
+    quit()
 
 class camThread(threading.Thread):
     def __init__(self, previewName, camID):
