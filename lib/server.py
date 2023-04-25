@@ -1,3 +1,5 @@
+import threading
+
 from network import ProtoSocket, VideoClient
 from network.generated import *
 
@@ -6,12 +8,13 @@ import lib.constants as constants
 
 class VideoServer(ProtoSocket):
 	def __init__(self, port):
+		super().__init__(port=port, device=Device.VIDEO)
 		self.video_socket = VideoClient(compression=constants.compression, port=8003, device=Device.VIDEO)
 		self.camera_threads = get_threads(self.video_socket)
 
 		if not self.camera_threads: quit("No workable camera detected")
 		else: print(f"Using cameras {[thread.camera_id for thread in self.camera_threads]}")
-		super().__init__(port=port, device=Device.VIDEO)
+		self.send_data()
 
 	def on_connect(self, source): 
 		print("Starting cameras")
@@ -19,6 +22,7 @@ class VideoServer(ProtoSocket):
 		self.video_socket.destination = (source[0], constants.dashboard_video_port)
 		for thread in self.camera_threads:
 			thread.start()
+		self.send_data()
 
 	def on_disconnect(self):
 		print("Closing cameras")
@@ -31,10 +35,20 @@ class VideoServer(ProtoSocket):
 	def get_thread(self, name): 
 		for index, thread in enumerate(self.camera_threads): 
 			if thread.camera_name == name: return index, thread
-		else: raise Exception(f"Could not find camera with name={name}")
+		else: return -1, None
+
+	def send_data(self): 
+		if not self.is_connected(): return
+		for camera in CameraName.values(): 
+			index, thread = self.get_thread(camera)
+			is_enabled = False if thread is None else thread.is_alive() 
+			data = CameraStatus(name=camera, is_connected=thread is not None, is_enabled=is_enabled)
+			self.send_message(data)
+		self.timer = threading.Timer(1, self.send_data)
+		self.timer.daemon = True
+		self.timer.start()
 
 	def on_message(self, wrapper): 
-		print(f"Received {wrapper.name}")
 		if wrapper.name == "VideoCommand": 
 			command = VideoCommand.FromString(wrapper.data)
 			print(f"Received video command: {command.compression}% compression at {command.framerate} seconds between frames");
@@ -46,19 +60,8 @@ class VideoServer(ProtoSocket):
 		elif wrapper.name == "AdjustCamera":
 			command = AdjustCamera.FromString(wrapper.data)
 			index, thread = self.get_thread(command.name)
-			if not command.is_enabled and thread.is_alive():
+			if not command.enable and thread.is_alive():
 				thread.terminate()
 				self.camera_threads[index] = thread.copy()
-			elif command.is_enabled and not thread.is_alive():
+			elif command.enable and not thread.is_alive():
 				thread.start()
-
-
-			# if (camEnabled[AdjustCamera.id] == 0) and (AdjustCamera.isEnabled == True):
-			# 	thread = camThread("Camera", list(serials.keys())[AdjustCamera.id])
-			# 	thread.start()
-			# 	cam_status(camID, True)
-			# 	camEnabled[AdjustCamera.id] = 1
-			# elif (camEnabled[AdjustCamera.id] == 1) and (AdjustCamera.isEnabled == False):
-			# 	thread.raise_exception()
-			# 	cam_status(camID, False)
-			# 	camEnabled[AdjustCamera.id] = 0
