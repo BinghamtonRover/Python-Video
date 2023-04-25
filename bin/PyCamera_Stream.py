@@ -2,20 +2,14 @@ import cv2
 import threading
 import subprocess
 import socket
-#from lib.network import ProtoClient
-#from lib.network import ProtoServer
-from lib.network import VideoClient
-from lib.network import VideoServer
-from lib.network.generated.Protobuf.video_pb2 import *
+from network import VideoClient, ProtoSocket, Device
+from network.src.generated.Protobuf.video_pb2 import *
 
 serials = {}
 FILTER = "ID_SERIAL="
 camEnabled = [0,0,0,0,0,0,0]
-serverAddressPort("127.0.0.1", 8001)
-#client = ProtoClient()
-#server = ProtoServer()
-server = VideoServer()
-client = VideoClient()
+server = ProtoSocket(port=8002, device=Device.VIDEO)
+client = VideoClient(port=8000, device=Device.VIDEO, buffer=65_527)
 
 def cam_status(camID, enabled):
     status = CameraStatus(id=camID, is_enabled=enabled)
