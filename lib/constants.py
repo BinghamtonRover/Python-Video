@@ -1,8 +1,5 @@
 from network.generated import *
 
-# The resolution to start streaming at, once the dashboard is connected.
-default_resolution = (400, 400)
-
 # These list maps OpenCV IDs (index) to [CameraName]s. 
 # 
 # This is HIGHLY dependent on the EXACT order of the USB ports.
@@ -22,5 +19,11 @@ camera_names = [
 
 dashboard_video_port = 8008
 
-framerate = 1/30  # FPS
-compression = 50  # 1-100
+def get_default_details(index): return CameraDetails(
+	name=camera_names[index],
+	resolution_width=400,
+	resolution_height=400,
+	quality=70,
+	fps=30,
+	status=CameraStatus.CAMERA_ENABLED,
+)

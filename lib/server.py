@@ -1,3 +1,4 @@
+from multiprocessing import Queue
 import threading
 
 from network import ProtoSocket, VideoClient
@@ -9,59 +10,66 @@ import lib.constants as constants
 class VideoServer(ProtoSocket):
 	def __init__(self, port):
 		super().__init__(port=port, device=Device.VIDEO)
-		self.video_socket = VideoClient(compression=constants.compression, port=8003, device=Device.VIDEO)
-		self.camera_threads = get_threads(self.video_socket)
+		self.video_socket = VideoClient(port=8003, device=Device.VIDEO)
+		self.queue = Queue()
+		self.camera_threads = get_threads(self.video_socket, self.queue)
 
 		if not self.camera_threads: quit("No workable camera detected")
-		else: print(f"Using cameras {[thread.camera_id for thread in self.camera_threads]}")
 		self.send_data()
 
 	def on_connect(self, source): 
-		print("Starting cameras")
 		super().on_connect(source)
+		print("Starting cameras")
 		self.video_socket.destination = (source[0], constants.dashboard_video_port)
-		for thread in self.camera_threads:
-			thread.start()
 		self.send_data()
+		for thread in self.camera_threads:
+			details = CameraDetails.FromString(thread.details)
+			if details.status != CameraStatus.CAMERA_ENABLED: continue
+			thread.start()
+			details.status = CameraStatus.CAMERA_LOADING
+			self.send_message(VideoData(id=thread.camera_id, details=details))
 
 	def on_disconnect(self):
-		print("Closing cameras")
 		super().on_disconnect()
+		print("Closing cameras")
 		for thread in self.camera_threads:
-			thread.terminate()
-		# Threads cannot be restarted, so make a copy instead!
-		self.camera_threads = get_threads(self.video_socket)
-
-	def get_thread(self, name): 
-		for index, thread in enumerate(self.camera_threads): 
-			if thread.camera_name == name: return index, thread
-		else: return -1, None
+			if thread.is_alive(): thread.terminate()
+		# Keep the old settings but restart the thread
+		self.camera_threads = [thread.copy() for thread in self.camera_threads]
 
 	def send_data(self): 
 		if not self.is_connected(): return
-		for camera in CameraName.values(): 
-			index, thread = self.get_thread(camera)
-			is_enabled = False if thread is None else thread.is_alive() 
-			data = CameraStatus(name=camera, is_connected=thread is not None, is_enabled=is_enabled)
+
+		statuses = [None] * len(self.camera_threads)
+		while not self.queue.empty():  # read all data
+			camera_id, status = self.queue.get()
+			statuses[camera_id] = status
+
+		for thread in self.camera_threads:
+			details = CameraDetails.FromString(thread.details)
+			if statuses[thread.camera_id] is not None: 
+				details.status = statuses[thread.camera_id]
+			data = VideoData(
+				id=thread.camera_id,
+				details=details,
+			)
 			self.send_message(data)
-		self.timer = threading.Timer(1, self.send_data)
+		self.timer = threading.Timer(5, self.send_data)
 		self.timer.daemon = True
 		self.timer.start()
 
 	def on_message(self, wrapper): 
 		if wrapper.name == "VideoCommand": 
 			command = VideoCommand.FromString(wrapper.data)
-			print(f"Received video command: {command.compression}% compression at {command.framerate} seconds between frames");
-			self.video_socket.compression = command.compression
-			constants.framerate = command.framerate
-			dashboard = self.destination
-			self.on_disconnect()
-			self.on_connect(dashboard)
-		elif wrapper.name == "AdjustCamera":
-			command = AdjustCamera.FromString(wrapper.data)
-			index, thread = self.get_thread(command.name)
-			if not command.enable and thread.is_alive():
-				thread.terminate()
-				self.camera_threads[index] = thread.copy()
-			elif command.enable and not thread.is_alive():
-				thread.start()
+			thread = self.camera_threads[command.id]
+			old_details = CameraDetails.FromString(thread.details)
+
+			old_details.status = CameraStatus.CAMERA_LOADING
+			if thread.is_alive(): thread.terminate()
+			self.send_message(VideoData(id=thread.camera_id, details=old_details))
+			copy = thread.copy()
+			copy.details = command.details.SerializeToString()
+			self.camera_threads[command.id] = copy
+			self.send_message(command)
+
+			if command.details.status == CameraStatus.CAMERA_ENABLED: copy.start()
