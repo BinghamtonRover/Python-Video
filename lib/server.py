@@ -68,10 +68,10 @@ class VideoServer(ProtoSocket):
 	def on_message(self, wrapper): 
 		if wrapper.name == "VideoCommand": 
 			command = VideoCommand.FromString(wrapper.data)
+			self.send_message(command)
 			thread = self.camera_threads[command.id]
 			old_details = CameraDetails.FromString(thread.details)
 
-			self.send_message(command)
 			old_details.status = CameraStatus.CAMERA_LOADING
 			self.send_message(VideoData(id=thread.camera_id, details=old_details))
 			if thread.is_alive(): thread.terminate()
