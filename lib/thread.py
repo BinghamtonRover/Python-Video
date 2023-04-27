@@ -13,43 +13,51 @@ cv2.setLogLevel(0)  # no logging from OpenCV
 class CameraThread(Process):
 	def __init__(self, camera_id, details, client, queue):
 		print(f"[CameraThread] Initializing camera {camera_id}")
+		self.queue = queue
 		self.camera_id = camera_id
+		self.set_status(CameraStatus.CAMERA_LOADING)
 		self.details = details.SerializeToString()
 		self.client = client
-		self.queue = queue
 		self.check_camera()
 		super().__init__()
 
+	def set_status(self, status): 
+		"""Sets the status for this camera.
+
+		This is needed because the server is running in a whole different process entirely, and setting
+		self.status won't be reflected in the server's process. The Queue works across processes.
+		"""
+		self.queue.put([self.camera_id, status])
+
 	def check_camera(self): 
-		result = None
 		camera = cv2.VideoCapture(self.camera_id)
 		if not camera.isOpened(): 
-			result = CameraStatus.CAMERA_DISCONNECTED
+			self.set_status(CameraStatus.CAMERA_DISCONNECTED)
 		else: 
 			success, frame = camera.read()
 			if not success: 
-				result = CameraStatus.CAMERA_NOT_RESPONDING
-		if result is not None: 
-			self.queue.put([self.camera_id, result])
-			details = CameraDetails.FromString(self.details)
-			details.status = result
-			self.details = details.SerializeToString()
+				self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
 
 	def run(self):
 		details = CameraDetails.FromString(self.details)
-		if details.status != CameraStatus.CAMERA_ENABLED: return
+		if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: return
 		camera = cv2.VideoCapture(self.camera_id)
 		camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
 		camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
+		self.set_status(CameraStatus.CAMERA_ENABLED)
+		details.status = CameraStatus.CAMERA_ENABLED
 		try:
 			while True:
 				success, frame = camera.read()
 				if not success: 
-					self.queue.put([self.camera_id, CameraStatus.CAMERA_NOT_RESPONDING])
+					self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
 					return
 				self.client.send_frame(camera_id=self.camera_id, frame=frame, details=details)
 				time.sleep(1/details.fps)
 		except KeyboardInterrupt: pass
+		except OSError as error:
+			if error.errno == 10040:  # message too large
+				self.set_status(CameraStatus.FRAME_TOO_LARGE)
 
 	def copy(self): return CameraThread(
 		camera_id=self.camera_id, 

@@ -17,6 +17,12 @@ class VideoServer(ProtoSocket):
 		if not self.camera_threads: quit("No workable camera detected")
 		self.send_data()
 
+	def close(self): 
+		for thread in self.camera_threads: 
+			if thread.is_alive(): thread.terminate()
+		self.video_socket.close()
+		super().close()
+
 	def on_connect(self, source): 
 		super().on_connect(source)
 		print("Starting cameras")
@@ -24,9 +30,9 @@ class VideoServer(ProtoSocket):
 		self.send_data()
 		for thread in self.camera_threads:
 			details = CameraDetails.FromString(thread.details)
-			if details.status != CameraStatus.CAMERA_ENABLED: continue
-			thread.start()
+			if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: continue
 			details.status = CameraStatus.CAMERA_LOADING
+			thread.start()
 			self.send_message(VideoData(id=thread.camera_id, details=details))
 
 	def on_disconnect(self):
@@ -49,12 +55,13 @@ class VideoServer(ProtoSocket):
 			details = CameraDetails.FromString(thread.details)
 			if statuses[thread.camera_id] is not None: 
 				details.status = statuses[thread.camera_id]
+				thread.details = details.SerializeToString()
 			data = VideoData(
 				id=thread.camera_id,
 				details=details,
 			)
 			self.send_message(data)
-		self.timer = threading.Timer(5, self.send_data)
+		self.timer = threading.Timer(1, self.send_data)
 		self.timer.daemon = True
 		self.timer.start()
 
@@ -64,12 +71,12 @@ class VideoServer(ProtoSocket):
 			thread = self.camera_threads[command.id]
 			old_details = CameraDetails.FromString(thread.details)
 
+			self.send_message(command)
 			old_details.status = CameraStatus.CAMERA_LOADING
-			if thread.is_alive(): thread.terminate()
 			self.send_message(VideoData(id=thread.camera_id, details=old_details))
+			if thread.is_alive(): thread.terminate()
 			copy = thread.copy()
 			copy.details = command.details.SerializeToString()
 			self.camera_threads[command.id] = copy
-			self.send_message(command)
 
 			if command.details.status == CameraStatus.CAMERA_ENABLED: copy.start()

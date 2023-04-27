@@ -24,6 +24,6 @@ def get_default_details(index): return CameraDetails(
 	resolution_width=400,
 	resolution_height=400,
 	quality=70,
-	fps=30,
+	fps=120,
 	status=CameraStatus.CAMERA_ENABLED,
 )
