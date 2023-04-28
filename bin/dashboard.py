@@ -1,5 +1,7 @@
 """
 This code is a demo ONLY. Use the dashboard to display video.
+
+This script can display video, but the dashboard can modify the camera settings.
 """
 
 import cv2
