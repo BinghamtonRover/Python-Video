@@ -32,6 +32,7 @@ class VideoServer(ProtoSocket):
 			details = CameraDetails.FromString(thread.details)
 			if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: continue
 			details.status = CameraStatus.CAMERA_LOADING
+			print(f"  Starting camera id={thread.camera_id}: {CameraName.Name(details.name)}")
 			thread.start()
 			self.send_message(VideoData(id=thread.camera_id, details=details))
 
