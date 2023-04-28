@@ -1,7 +1,7 @@
 from network.generated import VideoCommand
 import cv2
 from multiprocessing import Process, Queue
-from threading import Thread
+from threading import Thread, Timer
 import time
 
 from network.generated import *
@@ -42,16 +42,18 @@ class CameraThread(Process):
 		details = CameraDetails.FromString(self.details)
 		if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: return
 		camera = cv2.VideoCapture(self.camera_id)
-		camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
-		camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
+		# camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
+		# camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
 		self.set_status(CameraStatus.CAMERA_ENABLED)
 		details.status = CameraStatus.CAMERA_ENABLED
 		try:
 			while True:
 				success, frame = camera.read()
 				if not success: 
+					print(f"Camera {CameraName.Name(details.name)} isn't responding!")
 					self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
-					return
+					time.sleep(0.5)
+					return self.run()
 				self.client.send_frame(camera_id=self.camera_id, frame=frame, details=details)
 				time.sleep(1/details.fps)
 		except KeyboardInterrupt: pass

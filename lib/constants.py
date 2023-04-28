@@ -23,9 +23,9 @@ dashboard_video_port = 8008
 
 def get_default_details(index): return CameraDetails(
 	name=camera_names[index],
-	resolution_width=400,
-	resolution_height=400,
-	quality=20,
-	fps=10,
+	resolution_width=600,
+	resolution_height=600,
+	quality=75,
+	fps=24,
 	status=CameraStatus.CAMERA_ENABLED,
 )
