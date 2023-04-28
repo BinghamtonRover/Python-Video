@@ -16,5 +16,6 @@ if __name__ == '__main__':
 		try: data_socket.listen()
 		except KeyboardInterrupt: quit()
 		except OSError as error: 
+			# UDP error when a socket is closed during use. Ignore and try again.
 			if error.errno == 10054: continue
 			else: raise error
