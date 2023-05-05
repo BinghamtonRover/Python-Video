@@ -26,12 +26,13 @@ class VideoServer(ProtoSocket):
 	def on_connect(self, source): 
 		super().on_connect(source)
 		print("Starting cameras")
-		self.video_socket.destination = (source[0], constants.dashboard_video_port)
+		self.video_socket.destination = source
 		self.send_data()
 		for thread in self.camera_threads:
 			details = CameraDetails.FromString(thread.details)
 			if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: continue
 			details.status = CameraStatus.CAMERA_LOADING
+			print(f"  Opening camera {CameraName.Name(details.name)}")
 			thread.start()
 			self.send_message(VideoData(id=thread.camera_id, details=details))
 
