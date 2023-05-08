@@ -19,8 +19,6 @@ camera_names = [
 	CameraName.CAMERA_NAME_UNDEFINED,
 ]
 
-dashboard_video_port = 8008
-
 def get_default_details(index): return CameraDetails(
 	name=camera_names[index],
 	resolution_width=600,
