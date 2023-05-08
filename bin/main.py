@@ -17,5 +17,5 @@ if __name__ == '__main__':
 		except KeyboardInterrupt: quit()
 		except OSError as error: 
 			# UDP error when a socket is closed during use. Ignore and try again.
-			if error.errno == 10054: continue
+			if error.errno == 10054 or error.errno == 101: continue
 			else: raise error
