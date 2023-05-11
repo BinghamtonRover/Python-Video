@@ -12,6 +12,7 @@ class VideoClient(ProtoSocket):
 	def send_frame(self, camera_id, frame, details):
 		encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, details.quality])
 		message = VideoData(id=camera_id, details=details, frame=buffer.tobytes())
+		# print(f"Sending {len(buffer)} bytes to {self.destination} for camera {CameraName.Name(details.name)}")
 		self.send_message(message)
 
 class VideoServer(ProtoSocket):

@@ -52,6 +52,8 @@ class CameraThread(Process):
 		# camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
 		self.set_status(CameraStatus.CAMERA_ENABLED)
 		details.status = CameraStatus.CAMERA_ENABLED
+		if details.name == CameraName.CAMERA_NAME_UNDEFINED: 
+			raise ValueError(f"[Error] Camera with id={self.camera_id} is available but has no name!")
 		try:
 			print(f"Streaming camera {name}")
 			while True:
