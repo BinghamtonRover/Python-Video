@@ -1,11 +1,10 @@
-from network.generated import VideoCommand
-import cv2
 from multiprocessing import Process, Queue
 from threading import Thread
+
+import cv2
 import time
 
 from network.generated import *
-from network import VideoClient
 import lib.constants as constants
 
 cv2.setLogLevel(0)  # no logging from OpenCV
