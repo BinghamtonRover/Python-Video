@@ -87,5 +87,5 @@ class VideoServer(ProtoSocket):
 			copy = thread.copy()
 			copy.details = command.details.SerializeToString()
 			self.camera_threads[command.id] = copy
-
+			self.send_message(VideoData(id=thread.camera_id, details=command.details))
 			if command.details.status == CameraStatus.CAMERA_ENABLED: copy.start()

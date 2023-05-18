@@ -36,7 +36,6 @@ class CameraThread(Process):
 		else: 
 			success, frame = camera.read()
 			if success: 
-				self.set_status(CameraStatus.CAMERA_ENABLED) 
 				print("Operational")
 			else: 
 				self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
