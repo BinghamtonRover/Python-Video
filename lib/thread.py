@@ -1,8 +1,8 @@
 from multiprocessing import Process, Queue
-from threading import Thread
+from threading import Thread, Timer
 
-import cv2
 import time
+import cv2
 
 from network.generated import *
 import lib.constants as constants
@@ -39,24 +39,30 @@ class CameraThread(Process):
 
 	def run(self):
 		details = CameraDetails.FromString(self.details)
-		if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: return
+		if details.status == CameraStatus.CAMERA_DISABLED: return
 		camera = cv2.VideoCapture(self.camera_id)
-		camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
-		camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
+		# camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
+		# camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
 		self.set_status(CameraStatus.CAMERA_ENABLED)
 		details.status = CameraStatus.CAMERA_ENABLED
 		try:
+			print(f"  Opening camera id={self.camera_id}")
 			while True:
 				success, frame = camera.read()
 				if not success: 
+					print(f"Camera {CameraName.Name(details.name)} isn't responding!")
 					self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
+					time.sleep(0.5)
 					return
 				self.client.send_frame(camera_id=self.camera_id, frame=frame, details=details)
-				time.sleep(1/details.fps)
+				if details.fps != 0: time.sleep(1/details.fps)
 		except KeyboardInterrupt: pass
 		except OSError as error:
 			if error.errno == 10040:  # message too large
 				self.set_status(CameraStatus.FRAME_TOO_LARGE)
+			else: raise error
+		finally:
+			self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
 
 	def copy(self): return CameraThread(
 		camera_id=self.camera_id, 
