@@ -5,12 +5,12 @@ from network.generated import *
 # This is HIGHLY dependent on the EXACT order of the USB ports.
 camera_names = [
 	CameraName.ROVER_FRONT,
-	CameraName.CAMERA_NAME_UNDEFINED,
+	CameraName.ROVER_REAR,
 	CameraName.CAMERA_NAME_UNDEFINED,
 	CameraName.CAMERA_NAME_UNDEFINED,
 	CameraName.ARM_BASE,
 	CameraName.CAMERA_NAME_UNDEFINED,
-	CameraName.ROVER_REAR,
+	CameraName.CAMERA_NAME_UNDEFINED,
 	CameraName.CAMERA_NAME_UNDEFINED,
 	CameraName.CAMERA_NAME_UNDEFINED,
 	CameraName.CAMERA_NAME_UNDEFINED,
