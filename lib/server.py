@@ -1,18 +1,25 @@
-from multiprocessing import Queue
 import threading
+import cv2
+import multiprocessing
 
-from network import ProtoSocket, VideoClient
+from network import *
 from network.generated import *
 
 from lib.thread import get_threads
 import lib.constants as constants
 
+class VideoClient(ProtoSocket):
+	def send_frame(self, camera_id, frame, details):
+		encoded, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, details.quality])
+		message = VideoData(id=camera_id, details=details, frame=buffer.tobytes())
+		self.send_message(message)
+
 class VideoServer(ProtoSocket):
 	def __init__(self, port):
 		super().__init__(port=port, device=Device.VIDEO)
-		self.video_socket = VideoClient(port=8003, device=Device.VIDEO)
-		self.queue = Queue()
-		self.camera_threads = get_threads(self.video_socket, self.queue)
+		self.queue = multiprocessing.Queue()
+		self.client = VideoClient(port=8003, device=Device.VIDEO)
+		self.camera_threads = get_threads(self.client, self.queue)
 
 		if not self.camera_threads: quit("No workable camera detected")
 		self.send_data()
@@ -20,13 +27,13 @@ class VideoServer(ProtoSocket):
 	def close(self): 
 		for thread in self.camera_threads: 
 			if thread.is_alive(): thread.terminate()
-		self.video_socket.close()
+		self.client.close()
 		super().close()
 
 	def on_connect(self, source): 
 		super().on_connect(source)
+		self.client.on_connect(source)
 		print("Starting cameras")
-		self.video_socket.destination = source
 		self.send_data()
 		for thread in self.camera_threads:
 			details = CameraDetails.FromString(thread.details)
@@ -38,6 +45,7 @@ class VideoServer(ProtoSocket):
 
 	def on_disconnect(self):
 		super().on_disconnect()
+		self.client.on_disconnect()
 		print("Closing cameras")
 		for thread in self.camera_threads:
 			if thread.is_alive(): thread.terminate()
