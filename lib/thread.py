@@ -11,7 +11,7 @@ cv2.setLogLevel(0)  # no logging from OpenCV
 
 class CameraThread(Process):
 	def __init__(self, camera_id, details, client, queue):
-		print(f"[CameraThread] Initializing camera {camera_id}")
+		print(f"[CameraThread] Initializing camera {camera_id}: ", end="")
 		self.queue = queue
 		self.camera_id = camera_id
 		self.set_status(CameraStatus.CAMERA_LOADING)
@@ -32,21 +32,26 @@ class CameraThread(Process):
 		camera = cv2.VideoCapture(self.camera_id)
 		if not camera.isOpened(): 
 			self.set_status(CameraStatus.CAMERA_DISCONNECTED)
+			print("Not connected")
 		else: 
 			success, frame = camera.read()
-			if not success: 
+			if success: 
+				self.set_status(CameraStatus.CAMERA_ENABLED) 
+				print("Operational")
+			else: 
 				self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
+				print("Not responding")
 
 	def run(self):
 		details = CameraDetails.FromString(self.details)
-		if details.status == CameraStatus.CAMERA_DISABLED: return
+		if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: return
 		camera = cv2.VideoCapture(self.camera_id)
-		# camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
-		# camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
+		camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
+		camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
 		self.set_status(CameraStatus.CAMERA_ENABLED)
 		details.status = CameraStatus.CAMERA_ENABLED
 		try:
-			print(f"  Opening camera id={self.camera_id}")
+			print(f"  Streaming camera id={self.camera_id}")
 			while True:
 				success, frame = camera.read()
 				if not success: 
