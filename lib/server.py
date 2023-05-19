@@ -30,6 +30,15 @@ class VideoServer(ProtoSocket):
 		self.client.close()
 		super().close()
 
+	def update_settings(self, settings):
+		super().update_settings(settings)
+		if settings.status == RoverStatus.AUTONOMOUS: 
+			# The autonomy mode needs full control over all the cameras
+			for index, thread in enumerate(self.camera_threads): 
+				details = CameraDetails.FromString(thread.details)
+				details.status = CameraStatus.CAMERA_DISABLED
+				self.overwrite_details(index, thread, details)
+
 	def on_connect(self, source): 
 		super().on_connect(source)
 		self.client.on_connect(source)
@@ -74,18 +83,25 @@ class VideoServer(ProtoSocket):
 		self.timer.daemon = True
 		self.timer.start()
 
+	def overwrite_details(self, index, thread, details): 
+		if thread.is_alive(): thread.terminate()
+		copy = thread.copy()
+		copy.details = details.SerializeToString()
+		self.camera_threads[index] = copy
+		self.send_message(VideoData(id=thread.camera_id, details=details))
+		if details.status == CameraStatus.CAMERA_ENABLED: copy.start()
+
 	def on_message(self, wrapper): 
+		settings = UpdateSetting.FromString(self.settings)
+		if settings.status == RoverStatus.AUTONOMOUS: return
 		if wrapper.name == "VideoCommand": 
+			# Respond to handshake
 			command = VideoCommand.FromString(wrapper.data)
 			self.send_message(command)
+			# Send LOADING before making any changes
 			thread = self.camera_threads[command.id]
 			old_details = CameraDetails.FromString(thread.details)
-
 			old_details.status = CameraStatus.CAMERA_LOADING
 			self.send_message(VideoData(id=thread.camera_id, details=old_details))
-			if thread.is_alive(): thread.terminate()
-			copy = thread.copy()
-			copy.details = command.details.SerializeToString()
-			self.camera_threads[command.id] = copy
-			self.send_message(VideoData(id=thread.camera_id, details=command.details))
-			if command.details.status == CameraStatus.CAMERA_ENABLED: copy.start()
+			# Change the settings
+			self.overwrite_details(command.id, thread, command.details)
