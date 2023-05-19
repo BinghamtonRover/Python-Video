@@ -14,7 +14,6 @@ class CameraThread(Process):
 		print(f"[CameraThread] Initializing camera {camera_id}: ", end="")
 		self.queue = queue
 		self.camera_id = camera_id
-		self.set_status(CameraStatus.CAMERA_LOADING)
 		self.details = details.SerializeToString()
 		self.client = client
 		self.check_camera()
