@@ -45,15 +45,17 @@ class CameraThread(Process):
 		name = CameraName.Name(details.name)
 		print(f"Thread spawned for camera {name}")
 		if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: 
-			print(f"Quitting because camera {name} isn't enabled")
+			print(f"Quitting because camera {name} isn't enabled: id={self.camera_id}, status={details.status}")
 			return
 		camera = cv2.VideoCapture(self.camera_id)
-		# camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
-		# camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
+		camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
+		camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
 		self.set_status(CameraStatus.CAMERA_ENABLED)
 		details.status = CameraStatus.CAMERA_ENABLED
 		if details.name == CameraName.CAMERA_NAME_UNDEFINED: 
-			raise ValueError(f"[Error] Camera with id={self.camera_id} is available but has no name!")
+			print(f"Quitting because camera id={self.camera_id} has no name")
+			self.set_status(CameraStatus.CAMERA_HAS_NO_NAME)
+			return
 		try:
 			print(f"Streaming camera {name}")
 			while True:
