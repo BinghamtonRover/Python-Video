@@ -89,7 +89,7 @@ class VideoServer(ProtoSocket):
 		copy.details = details.SerializeToString()
 		self.camera_threads[index] = copy
 		self.send_message(VideoData(id=thread.camera_id, details=details))
-		if details.status == CameraStatus.CAMERA_ENABLED: copy.start()
+		if details.status in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: copy.start()
 
 	def on_message(self, wrapper): 
 		settings = UpdateSetting.FromString(self.settings)

@@ -42,14 +42,18 @@ class CameraThread(Process):
 
 	def run(self):
 		details = CameraDetails.FromString(self.details)
-		if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: return
+		name = CameraName.Name(details.name)
+		print(f"Thread spawned for camera {name}")
+		if details.status not in [CameraStatus.CAMERA_ENABLED, CameraStatus.CAMERA_LOADING]: 
+			print(f"Quitting because camera {name} isn't enabled")
+			return
 		camera = cv2.VideoCapture(self.camera_id)
-		camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
-		camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
+		# camera.set(cv2.CAP_PROP_FRAME_WIDTH, details.resolution_width)
+		# camera.set(cv2.CAP_PROP_FRAME_HEIGHT, details.resolution_height)
 		self.set_status(CameraStatus.CAMERA_ENABLED)
 		details.status = CameraStatus.CAMERA_ENABLED
 		try:
-			print(f"  Streaming camera id={self.camera_id}")
+			print(f"Streaming camera {name}")
 			while True:
 				success, frame = camera.read()
 				if not success: 
