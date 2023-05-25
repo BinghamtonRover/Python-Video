@@ -55,6 +55,7 @@ class CameraThread(Process):
 		if details.name == CameraName.CAMERA_NAME_UNDEFINED: 
 			print(f"Quitting because camera id={self.camera_id} has no name")
 			self.set_status(CameraStatus.CAMERA_HAS_NO_NAME)
+			camera.release()
 			return
 		try:
 			print(f"Streaming camera {name}")
@@ -64,16 +65,21 @@ class CameraThread(Process):
 					print(f"Camera {CameraName.Name(details.name)} isn't responding!")
 					self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
 					time.sleep(0.5)
+					camera.release()
 					return
 				self.client.send_frame(camera_id=self.camera_id, frame=frame, details=details)
 				if details.fps != 0: time.sleep(1/details.fps)
 		except KeyboardInterrupt: pass
 		except OSError as error:
 			if error.errno == 10040:  # message too large
+				camera.release()
 				self.set_status(CameraStatus.FRAME_TOO_LARGE)
-			else: raise error
+			else: 
+				self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
+				camera.release()
+				raise error
 		finally:
-			self.set_status(CameraStatus.CAMERA_NOT_RESPONDING)
+			camera.release()
 
 	def copy(self): return CameraThread(
 		camera_id=self.camera_id, 
