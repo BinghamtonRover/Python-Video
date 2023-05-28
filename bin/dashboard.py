@@ -20,7 +20,7 @@ class VideoServer(ProtoSocket):
 
 	# Make sure waitKey is called every once in a while
 	def on_loop(self): 
-		cv2.waitKey(1)
+		if cv2.waitKey(1) == ord("q"): self.close()
 
 	# Override of ProtoSocket.close()
 	def close(self): 
