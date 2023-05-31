@@ -14,12 +14,15 @@ class CameraThread(threading.Thread):
 		self.details = details
 		self.collection = collection
 		self.keep_alive = True
-		self.camera = cv2.VideoCapture(camera_id)
+		if camera_id.isnumeric():
+			self.camera = cv2.VideoCapture(int(camera_id))
+		else: 
+			self.camera = cv2.VideoCapture(camera_id)
 		self.update_details(details)
 		self.check_camera()
 		super().__init__()
 		
-	def spaces(self): return " " * self.camera_id
+	def spaces(self): return "" # " " * self.camera_id
 	def close(self): self.keep_alive = False
 
 	def set_status(self, status):
