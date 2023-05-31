@@ -13,8 +13,8 @@ class VideoCollection:
         
     def start(self):
         print("Starting threads...")
-        server_thread = ServerThread(self.server)
-        ServerThread.startThreads([server_thread, *self.cameras.values()])
+        # server_thread = ServerThread(self.server)
+        ServerThread.startThreads([self.server, *self.cameras.values()])
 
 if __name__ == '__main__':
     collection = VideoCollection()
